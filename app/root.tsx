@@ -1,6 +1,7 @@
-import "./i18n/config"; // Initializes i18n on load
+import "./i18n/config";
 import { useTranslation } from "~/i18n";
-import { Link, useLocation, useParams } from "react-router";
+import { Link, useLocation } from "react-router";
+import { useState } from "react";
 
 import {
   isRouteErrorResponse,
@@ -30,31 +31,29 @@ export const links: Route.LinksFunction = () => [
 export function Layout({ children }: { children: React.ReactNode }) {
   const { t, i18n } = useTranslation();
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Detect current language from URL path
+  // Detect language from URL
   const pathParts = location.pathname.split("/").filter(Boolean);
   const langFromPath = pathParts[0] && ["en", "es"].includes(pathParts[0]) ? pathParts[0] : "sv";
 
-  // Force i18n to use the language from URL
   if (i18n.language !== langFromPath) {
     i18n.changeLanguage(langFromPath);
   }
 
   const currentLang = i18n.language as "sv" | "en" | "es";
 
-  // Build links with correct prefix
   const prefixedPath = (path: string) => {
     return currentLang === "sv" ? path : `/${currentLang}${path}`;
   };
 
-  // Switch language – keeps current page
   const switchToLang = (lang: "sv" | "en" | "es") => {
     const cleanPath = location.pathname.replace(/^\/(en|es)/, "") || "/";
     return lang === "sv" ? cleanPath : `/${lang}${cleanPath}`;
   };
 
   return (
-    <html lang={currentLang}>
+    <html lang={currentLang} className="light"> {/* Forces light mode */}
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -62,85 +61,97 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body style={{ margin: 0, fontFamily: "'Inter', system-ui, sans-serif" }}>
-        <header
-          style={{
-            padding: "1.5rem 2rem",
-            background: "#ffffff",
-            borderBottom: "1px solid #eee",
-            position: "sticky",
-            top: 0,
-            zIndex: 100,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-          }}
-        >
-          <nav
-            style={{
-              maxWidth: "1200px",
-              margin: "0 auto",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
+      <body className="min-h-screen flex flex-col">
+        {/* Header */}
+        <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+          <nav className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
             <Link
               to={currentLang === "sv" ? "/" : `/${currentLang}`}
-              style={{
-                fontSize: "2rem",
-                fontWeight: "bold",
-                color: "#0066cc",
-                textDecoration: "none",
-              }}
+              className="text-3xl font-bold text-blue-600"
             >
               {t("brand")}
             </Link>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "2.5rem" }}>
-              <div style={{ display: "flex", gap: "2.5rem", fontSize: "1.1rem" }}>
-                <Link to={prefixedPath("/")} style={{ color: "#333", textDecoration: "none", fontWeight: "500" }}>
+            {/* Desktop Menu */}
+            <div className="hidden md:flex items-center gap-12">
+              <div className="flex gap-8 text-lg">
+                <Link to={prefixedPath("/")} className="text-gray-700 hover:text-blue-600 font-medium">
                   {t("home")}
                 </Link>
-                <Link to={prefixedPath("/about")} style={{ color: "#333", textDecoration: "none", fontWeight: "500" }}>
+                <Link to={prefixedPath("/about")} className="text-gray-700 hover:text-blue-600 font-medium">
                   {t("about")}
                 </Link>
-                <Link to={prefixedPath("/services")} style={{ color: "#333", textDecoration: "none", fontWeight: "500" }}>
+                <Link to={prefixedPath("/services")} className="text-gray-700 hover:text-blue-600 font-medium">
                   {t("services")}
                 </Link>
-                <Link to={prefixedPath("/contact")} style={{ color: "#333", textDecoration: "none", fontWeight: "500" }}>
+                <Link to={prefixedPath("/contact")} className="text-gray-700 hover:text-blue-600 font-medium">
                   {t("contact")}
                 </Link>
               </div>
 
-              <div style={{ display: "flex", gap: "0.8rem", fontSize: "1.5rem" }}>
-                <Link to={switchToLang("sv")} title="Svenska" style={{ opacity: currentLang === "sv" ? 1 : 0.5 }}>
+              <div className="flex gap-4 text-3xl">
+                <Link to={switchToLang("sv")} className={currentLang === "sv" ? "opacity-100" : "opacity-50"}>
                   🇸🇪
                 </Link>
-                <Link to={switchToLang("en")} title="English" style={{ opacity: currentLang === "en" ? 1 : 0.5 }}>
+                <Link to={switchToLang("en")} className={currentLang === "en" ? "opacity-100" : "opacity-50"}>
                   🇬🇧
                 </Link>
-                <Link to={switchToLang("es")} title="Español" style={{ opacity: currentLang === "es" ? 1 : 0.5 }}>
+                <Link to={switchToLang("es")} className={currentLang === "es" ? "opacity-100" : "opacity-50"}>
                   🇪🇸
                 </Link>
               </div>
             </div>
+
+            {/* Mobile Hamburger */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden text-4xl"
+            >
+              ☰
+            </button>
           </nav>
+
+          {/* Mobile Menu Dropdown */}
+          {mobileMenuOpen && (
+            <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b shadow-lg">
+              <div className="flex flex-col items-center py-8 gap-8 text-xl">
+                <Link to={prefixedPath("/")} onClick={() => setMobileMenuOpen(false)} className="text-gray-700">
+                  {t("home")}
+                </Link>
+                <Link to={prefixedPath("/about")} onClick={() => setMobileMenuOpen(false)} className="text-gray-700">
+                  {t("about")}
+                </Link>
+                <Link to={prefixedPath("/services")} onClick={() => setMobileMenuOpen(false)} className="text-gray-700">
+                  {t("services")}
+                </Link>
+                <Link to={prefixedPath("/contact")} onClick={() => setMobileMenuOpen(false)} className="text-gray-700">
+                  {t("contact")}
+                </Link>
+                <div className="flex gap-8 text-4xl pt-4">
+                  <Link to={switchToLang("sv")} onClick={() => setMobileMenuOpen(false)} className={currentLang === "sv" ? "opacity-100" : "opacity-50"}>
+                    🇸🇪
+                  </Link>
+                  <Link to={switchToLang("en")} onClick={() => setMobileMenuOpen(false)} className={currentLang === "en" ? "opacity-100" : "opacity-50"}>
+                    🇬🇧
+                  </Link>
+                  <Link to={switchToLang("es")} onClick={() => setMobileMenuOpen(false)} className={currentLang === "es" ? "opacity-100" : "opacity-50"}>
+                    🇪🇸
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
         </header>
 
-        {children}
+        {/* Main content – grows to push footer down */}
+        <main className="flex-1">
+          {children}
+        </main>
 
-        <footer
-          style={{
-            padding: "3rem 2rem",
-            background: "#1a1a1a",
-            color: "#fff",
-            textAlign: "center",
-            marginTop: "4rem",
-          }}
-        >
-          <p>© {new Date().getFullYear()} JTW Måleri – Alla rättigheter förbehållna</p>
-          <p style={{ marginTop: "0.5rem", fontSize: "0.9rem", opacity: 0.8 }}>
-            Tullinge, Stockholm
-          </p>
+        {/* Footer – always at bottom */}
+        <footer className="bg-gray-900 text-white text-center py-12">
+          <p className="text-lg">© {new Date().getFullYear()} JTW Måleri – Alla rättigheter förbehållna</p>
+          <p className="text-sm opacity-80 mt-2">Tullinge, Stockholm</p>
         </footer>
 
         <ScrollRestoration />
