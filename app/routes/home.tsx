@@ -1,7 +1,18 @@
 import { useTranslation } from "~/i18n";
+import { useLocation } from "react-router";
 
 export default function Home() {
   const { t } = useTranslation();
+  const location = useLocation();
+
+  // Detect current language from URL
+  const pathParts = location.pathname.split("/").filter(Boolean);
+  const currentLang = pathParts[0] && ["en", "es"].includes(pathParts[0]) ? pathParts[0] : "sv";
+
+  // Build prefixed path
+  const prefixedPath = (path: string) => {
+    return currentLang === "sv" ? path : `/${currentLang}${path}`;
+  };
 
   return (
     <>
@@ -36,7 +47,7 @@ export default function Home() {
           </p>
           <div style={{ display: "flex", gap: "2rem", justifyContent: "center", flexWrap: "wrap" }}>
             <a
-              href="/contact"
+              href={prefixedPath("/contact")} // Now stays in current language
               style={{
                 padding: "1.2rem 3rem",
                 background: "#0066cc",
@@ -50,7 +61,7 @@ export default function Home() {
               {t("quoteButton")}
             </a>
             <a
-              href="/services"
+              href={prefixedPath("/services")} // Now stays in current language
               style={{
                 padding: "1.2rem 3rem",
                 background: "white",
